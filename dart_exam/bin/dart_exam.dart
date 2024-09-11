@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'package:dart_exam/services/student_service.dart';
-import 'package:dart_exam/models/student.dart';
+import '../lib/services/student_service.dart';
+import '../lib/models/student.dart';
 
 void main(List<String> arguments) async {
   final studentService = StudentService();
