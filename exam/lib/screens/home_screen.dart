@@ -13,19 +13,42 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final StudentService _studentService = StudentService();
   List<Student> _students = [];
+  List<Student> _filteredStudents = [];
+  TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadStudents();
+    _searchController.addListener(_filterStudents);
   }
 
-Future<void> _loadStudents() async {
-  final students = await _studentService.loadStudents();
-  setState(() {
-    _students = students;
-  });
-}
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadStudents() async {
+    final students = await _studentService.loadStudents();
+    setState(() {
+      _students = students;
+      _filteredStudents = students;
+    });
+  }
+
+  void _filterStudents() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      if (query.isEmpty) {
+        _filteredStudents = _students;
+      } else {
+        _filteredStudents = _students.where((student) {
+          return student.name.toLowerCase().contains(query);
+        }).toList();
+      }
+    });
+  }
 
   void _addStudent() async {
     final result = await Navigator.push(
@@ -50,27 +73,44 @@ Future<void> _loadStudents() async {
   }
 
   @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: AppBar(
-      title: Text('Student Management'),
-    ),
-    body: ListView.builder(
-      itemCount: _students.length,
-      itemBuilder: (context, index) {
-        final student = _students[index];
-        return ListTile(
-          title: Text(student.name),
-          subtitle: Text('ID: ${student.id}'),
-          onTap: () => _editStudent(student),
-        );
-      },
-    ),
-    bottomNavigationBar: CustomNavBarCurved(),
-    floatingActionButton: FloatingActionButton(
-      onPressed: _addStudent,
-      child: Icon(Icons.add),
-    ),
-  );
-}
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Student Management'),
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                labelText: 'Search by Name',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _filteredStudents.length,
+              itemBuilder: (context, index) {
+                final student = _filteredStudents[index];
+                return ListTile(
+                  title: Text(student.name),
+                  subtitle: Text('ID: ${student.id}'),
+                  onTap: () => _editStudent(student),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: CustomNavBarCurved(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _addStudent,
+        child: Icon(Icons.add),
+      ),
+    );
+  }
 }
